@@ -1,15 +1,15 @@
-use std::slice::{ Chunks, ChunksMut };
-use std::ops::{ Deref, DerefMut, Index, IndexMut };
-use std::marker::PhantomData;
-use std::iter::repeat;
-use std::path::Path;
-use std::io;
 use num::Zero;
+use std::io;
+use std::iter::repeat;
+use std::marker::PhantomData;
+use std::ops::{ Deref, DerefMut, Index, IndexMut };
+use std::path::Path;
+use std::slice::{ Chunks, ChunksMut };
 
-use traits::Primitive;
 use color::{ Rgb, Rgba, Luma, LumaA, FromColor, ColorType };
-use image::GenericImage;
 use dynimage::save_buffer;
+use image::GenericImage;
+use traits::Primitive;
 use utils::expand_packed;
 
 /// A generalized pixel.
@@ -344,15 +344,15 @@ where P: Pixel + 'static,
     }
 }
 
-impl<P, Container> ImageBuffer<P, Container>
-where P: Pixel<Subpixel=u8> + 'static,
-      Container: Deref<Target=[u8]> {
+impl<T, P, Container> ImageBuffer<P, Container>
+where P: Pixel<Subpixel=T> + 'static,
+      Container: Deref<Target=[T]>,
+      T: Primitive + 'static {
     /// Saves the buffer to a file at the path specified.
     ///
     /// The image format is derived from the file extension.
     /// Currently only jpeg and png files are supported.
     pub fn save<Q>(&self, path: Q) -> io::Result<()> where Q: AsRef<Path> {
-        // This is valid as the subpixel is u8.
         save_buffer(path,
                     self,
                     self.width(),
@@ -637,5 +637,17 @@ mod test {
             test::black_box(b);
         });
         b.bytes = 1000*1000*3
+    }
+
+    #[test]
+    fn cast_buffer_simple() {
+        use super::cast_buffer;
+        let data: &[u8] = &[1, 2, 3, 4];
+        let little_expected = &[(1 << 8) + 2, (3 << 8) + 4];
+        let big_expected = &[1 + (2 << 8), 3 + (4 << 8)];
+
+        let result: &[u16] = cast_buffer::<u8, u16>(data);
+
+        assert!((result == little_expected) || (result == big_expected))
     }
 }

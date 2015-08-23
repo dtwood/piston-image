@@ -1,10 +1,13 @@
-use std::io;
-use std::io::{Read, Write, Seek, BufReader};
-use std::path::Path;
-use std::fs::File;
-use std::iter;
-use std::ascii::AsciiExt;
 use num;
+use std::ascii::AsciiExt;
+use std::fs::File;
+use std::io::{Read, Write, Seek, BufReader};
+use std::io;
+use std::iter;
+use std::mem;
+use std::path::Path;
+use std::slice;
+use traits::Primitive;
 
 #[cfg(feature = "ppm")]
 use ppm;
@@ -548,8 +551,9 @@ pub fn open<P>(path: P) -> ImageResult<DynamicImage> where P: AsRef<Path> {
 
 /// This will lead to corrupted files if the buffer contains malformed data. Currently only
 /// jpeg and png files are supported.
-pub fn save_buffer<P>(path: P, buf: &[u8], width: u32, height: u32, color: color::ColorType)
-                      -> io::Result<()> where P: AsRef<Path> {
+pub fn save_buffer<P, B>(path: P, input_buf: &[B], width: u32, height: u32, color: color::ColorType)
+                      -> io::Result<()> where P: AsRef<Path>, B: Primitive {
+    let bytes = to_bytes(input_buf);
     let path = path.as_ref();
     let ref mut fout = try!(File::create(path));
     let ext = path.extension().and_then(|s| s.to_str())
@@ -558,16 +562,29 @@ pub fn save_buffer<P>(path: P, buf: &[u8], width: u32, height: u32, color: color
     match &*ext {
         #[cfg(feature = "jpeg")]
         "jpg" |
-        "jpeg" => jpeg::JPEGEncoder::new(fout).encode(buf, width, height, color),
+        "jpeg" => jpeg::JPEGEncoder::new(fout).encode(bytes, width, height, color),
         #[cfg(feature = "png_codec")]
-        "png"  => png::PNGEncoder::new(fout).encode(buf, width, height, color),
+        "png"  => png::PNGEncoder::new(fout).encode(bytes, width, height, color),
         #[cfg(feature = "ppm")]
-        "ppm"  => ppm::PPMEncoder::new(fout).encode(buf, width, height, color),
+        "ppm"  => ppm::PPMEncoder::new(fout).encode(bytes, width, height, color),
         format => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             &format!("Unsupported image format image/{:?}", format)[..],
         ))
     }
+}
+
+pub fn to_bytes<'a, B>(input: &[B]) -> &'a [u8] where B: Primitive {
+    let input_len = input.len();
+    let input_size = input_len * mem::size_of::<B>();
+    let output_size = input_size;
+    let output_len = output_size / mem::size_of::<u8>();
+
+    assert_eq!(input_len.checked_mul(mem::size_of::<B>()), output_len.checked_mul(mem::size_of::<u8>()));
+
+    let in_ptr: *const B = input.as_ptr() as *const B;
+    let out_ptr: *const u8 = in_ptr as *const u8;
+    return unsafe { slice::from_raw_parts(out_ptr, output_len) };
 }
 
 /// Create a new image from a Reader
