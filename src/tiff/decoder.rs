@@ -69,7 +69,7 @@ enum Predictor {
 }
 }
 
-/// The representation of a PNG decoder
+/// The representation of a TIFF decoder
 ///
 /// Currently does not support decoding of interlaced images
 #[derive(Debug)]
@@ -93,8 +93,8 @@ fn rev_hpredict_nsamp<T>(mut image: Vec<T>,
                          where T: num::Num + Copy {
     let width = size.0 as usize;
     let height = size.1 as usize;
-    for row in (0..height) {
-        for col in (samples..width * samples) {
+    for row in 0..height {
+        for col in samples..width * samples {
             let prev_pixel = image[(row * width * samples + col - samples)];
             let pixel = &mut image[(row * width * samples + col)];
             *pixel = *pixel + prev_pixel
@@ -268,12 +268,12 @@ impl<R: Read + Seek> TIFFDecoder<R> {
     }
 
     /// Reads a IFD entry.
-    ///
-    /// And IFD entry has four fields
-    /// Tag   2 bytes
-    /// Type  2 bytes
-    /// Count 4 bytes
-    /// Value 4 bytes either a pointer the value itself
+    // An IFD entry has four fields:
+    //
+    // Tag   2 bytes
+    // Type  2 bytes
+    // Count 4 bytes
+    // Value 4 bytes either a pointer the value itself
     fn read_entry(&mut self) -> ImageResult<Option<(ifd::Tag, ifd::Entry)>> {
         let tag = ifd::Tag::from_u16(try!(self.read_short()));
         let type_: ifd::Type = match FromPrimitive::from_u16(try!(self.read_short())) {
@@ -302,7 +302,7 @@ impl<R: Read + Seek> TIFFDecoder<R> {
             ),
             Some(offset) => try!(self.goto_offset(offset))
         }
-        for _ in (0..try!(self.read_short())) {
+        for _ in 0..try!(self.read_short()) {
             let (tag, entry) = match try!(self.read_entry()) {
                 Some(val) => val,
                 None => continue // Unknown data type in tag, skip
@@ -332,7 +332,7 @@ impl<R: Read + Seek> TIFFDecoder<R> {
         }
     }
 
-    /// Tries to retrieve a tag an convert it to the desired type.
+    /// Tries to retrieve a tag and convert it to the desired type.
     fn find_tag_u32(&mut self, tag: ifd::Tag) -> ImageResult<Option<u32>> {
         match try!(self.find_tag(tag)) {
             Some(val) => Ok(Some(try!(val.as_u32()))),
@@ -340,7 +340,7 @@ impl<R: Read + Seek> TIFFDecoder<R> {
         }
     }
 
-    /// Tries to retrieve a tag an convert it to the desired type.
+    /// Tries to retrieve a tag and convert it to the desired type.
     fn find_tag_u32_vec(&mut self, tag: ifd::Tag) -> ImageResult<Option<Vec<u32>>> {
         match try!(self.find_tag(tag)) {
             Some(val) => Ok(Some(try!(val.as_u32_vec()))),
@@ -359,12 +359,12 @@ impl<R: Read + Seek> TIFFDecoder<R> {
         }
     }
 
-    /// Tries to retrieve a tag an convert it to the desired type.
+    /// Tries to retrieve a tag and convert it to the desired type.
     fn get_tag_u32(&mut self, tag: ifd::Tag) -> ImageResult<u32> {
         (try!(self.get_tag(tag))).as_u32()
     }
 
-    /// Tries to retrieve a tag an convert it to the desired type.
+    /// Tries to retrieve a tag and convert it to the desired type.
     fn get_tag_u32_vec(&mut self, tag: ifd::Tag) -> ImageResult<Vec<u32>> {
         (try!(self.get_tag(tag))).as_u32_vec()
     }

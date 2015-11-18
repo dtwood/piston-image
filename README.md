@@ -14,7 +14,7 @@ All image processing functions provided operate on types that implement the ```G
 
 Add the following to the Cargo.toml in your project:
 
-```
+```toml
 [dependencies]
 image = "*"
 ```
@@ -22,9 +22,9 @@ image = "*"
 and import using ```extern crate```:
 
 ```rust
-    extern crate image;
+extern crate image;
 
-    //Use image::
+//Use image::
 ```
 
 ## 1. Documentation
@@ -40,6 +40,8 @@ http://www.piston.rs/image/image/index.html
 | PNG    | All supported color types | Same as decoding|
 | JPEG   | Baseline JPEG | Baseline JPEG |
 | GIF    | Yes | Yes |
+| BMP    | Yes | No |
+| ICO    | Yes | No |
 | TIFF   | Baseline(no fax and packbits support) + LZW | No |
 | Webp   | Lossy(Luma channel only) | No |
 | PPM    | No | Yes |

@@ -13,7 +13,7 @@ use buffer::{ImageBuffer, Pixel};
 use animation::{Frame, Frames};
 use dynimage::decoder_to_image;
 
-/// An enumeration of Image Errors
+/// An enumeration of Image errors
 #[derive(Debug)]
 pub enum ImageError {
     /// The Image is not formatted properly
@@ -139,7 +139,10 @@ pub enum ImageFormat {
     TGA,
 
     /// An Image in BMP Format
-    BMP
+    BMP,
+
+    /// An Image in ICO Format
+    ICO
 }
 
 /// The trait that all decoders implement
@@ -147,13 +150,13 @@ pub trait ImageDecoder: Sized {
     /// Returns a tuple containing the width and height of the image
     fn dimensions(&mut self) -> ImageResult<(u32, u32)>;
 
-    /// Returns the color type of the image e.g RGB(8) (8bit RGB)
+    /// Returns the color type of the image e.g. RGB(8) (8bit RGB)
     fn colortype(&mut self) -> ImageResult<ColorType>;
 
     /// Returns the length in bytes of one decoded row of the image
     fn row_len(&mut self) -> ImageResult<usize>;
 
-    /// Reads one row from the image into buf and returns the row index
+    /// Reads one row from the image into ```buf``` and returns the row index
     fn read_scanline(&mut self, buf: &mut [u8]) -> ImageResult<u32>;
 
     /// Decodes the entire image and return it as a Vector
@@ -167,6 +170,7 @@ pub trait ImageDecoder: Sized {
     }
 
     /// Returns the frames of the image
+    ///
     /// If the image is not animated it returns a single frame
     fn into_frames(self) -> ImageResult<Frames> {
         Ok(Frames::new(vec![
@@ -200,7 +204,7 @@ pub trait ImageDecoder: Sized {
             }
         }
 
-        for i in (0..length as usize) {
+        for i in 0..length as usize {
             {
                 let from = &tmp[x as usize * bpp..width as usize * bpp];
 
@@ -249,6 +253,7 @@ impl<'a, I: GenericImage> Iterator for Pixels<'a, I> {
 }
 
 /// Mutable pixel iterator
+///
 /// DEPRECATED: It is currently not possible to create a safe iterator for this in Rust. You have to use an iterator over the image buffer instead.
 pub struct MutPixels<'a, I: 'a> {
     image:  &'a mut I,
@@ -330,6 +335,7 @@ pub trait GenericImage: Sized {
     /// # Panics
     ///
     /// Panics if `(x, y)` is out of bounds.
+    ///
     /// TODO: change this signature to &P
     fn get_pixel(&self, x: u32, y: u32) -> Self::Pixel;
 
@@ -362,6 +368,7 @@ pub trait GenericImage: Sized {
     }
 
     /// Put a pixel at location (x, y), taking into account alpha channels
+    ///
     /// DEPRECATED: This method will be removed. Blend the pixel directly instead.
     fn blend_pixel(&mut self, x: u32, y: u32, pixel: Self::Pixel);
 
@@ -383,7 +390,8 @@ pub trait GenericImage: Sized {
     /// Returns an Iterator over mutable pixels of this image.
     /// The iterator yields the coordinates of each pixel
     /// along with a mutable reference to them.
-    /// DEPRECATED: "This cannot be implemented safely Rust. Please use the image buffer directly.
+    ///
+    /// DEPRECATED: This cannot be implemented safely in Rust. Please use the image buffer directly.
     fn pixels_mut(&mut self) -> MutPixels<Self> {
         let (width, height) = self.dimensions();
 
@@ -478,8 +486,8 @@ impl<'a, I: GenericImage + 'static> SubImage<'a, I>
     pub fn to_image(&self) -> ImageBuffer<I::Pixel, Vec<<I::Pixel as Pixel>::Subpixel>> {
         let mut out = ImageBuffer::new(self.xstride, self.ystride);
 
-        for y in (0..self.ystride) {
-            for x in (0..self.xstride) {
+        for y in 0..self.ystride {
+            for x in 0..self.xstride {
                 let p = self.get_pixel(x, y);
                 out.put_pixel(x, y, p);
             }

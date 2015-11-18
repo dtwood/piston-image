@@ -57,11 +57,13 @@ pub use image::ImageFormat::{
     GIF,
     WEBP,
     PPM,
-    BMP
+    BMP,
+    ICO
 };
 
 pub use buffer::{
     Pixel,
+    ConvertBuffer,
     // Image types
     ImageBuffer,
     RgbImage,
@@ -108,6 +110,8 @@ pub mod webp;
 pub mod ppm;
 #[cfg(feature = "png_codec")]
 pub mod png;
+#[cfg(feature = "ico")]
+pub mod ico;
 #[cfg(feature = "jpeg")]
 pub mod jpeg;
 #[cfg(feature = "gif_codec")]
